@@ -1,7 +1,6 @@
 from file_system import SignedFile
 from signers import HashSigner, RSASigner, FingerprintSigner, HMACSigner, ECDSASigner, CompoundSigner
-from processors import ZlibProcessor, FernetProcessor, CompoundProcessor
-
+from processors import ZlibProcessor, FernetProcessor, CompoundProcessor, Base64Processor, AESProcessor, LZ4Processor, XORProcessor
 def test_signed_file(data, signer, processor):
     file = SignedFile(
             "test.txt", 
@@ -41,9 +40,17 @@ def run_tests():
         for processor in [
                 zl:=ZlibProcessor(), 
                 fp:=FernetProcessor.new(),
+                bp:=Base64Processor(),
+                ap:=AESProcessor.new(),
+                lp:=LZ4Processor(),
+                xp:=XORProcessor.new(),
                 CompoundProcessor(
                     zl,
-                    fp
+                    fp,
+                    bp,
+                    ap,
+                    lp,
+                    xp
                 )
         ]:
             test_signed_file(data, signer, processor)
