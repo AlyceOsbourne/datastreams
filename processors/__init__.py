@@ -1,25 +1,16 @@
 import zlib
-import pickle
-
-from file_system import DataProcessor
-
-class ZlibProcessor(DataProcessor):
+import cryptography.fernet
+import abc
+class DataProcessor(abc.ABC):
+    @abc.abstractmethod
     def process(self, data: bytes) -> bytes:
-        return zlib.compress(data)
+        pass
 
+    @abc.abstractmethod
     def unprocess(self, data: bytes) -> bytes:
-        return zlib.decompress(data)
-
-class PickleProcessor(DataProcessor):
-    def process(self, data: bytes) -> bytes:
-        return pickle.dumps(data)
-
-    def unprocess(self, data: bytes) -> bytes:
-        return pickle.loads(data)
-
-
+        pass
 class CompoundProcessor(DataProcessor):
-    def __init__(self, processors):
+    def __init__(self, *processors):
         self.processors = processors
 
     def process(self, data: bytes) -> bytes:
@@ -31,3 +22,23 @@ class CompoundProcessor(DataProcessor):
         for processor in reversed(self.processors):
             data = processor.unprocess(data)
         return data
+class ZlibProcessor(DataProcessor):
+    def process(self, data: bytes) -> bytes:
+        return zlib.compress(data)
+
+    def unprocess(self, data: bytes) -> bytes:
+        return zlib.decompress(data)
+class FernetProcessor(DataProcessor):
+    def __init__(self, key: bytes):
+        self.key = key
+        self.fernet = cryptography.fernet.Fernet(key)
+        
+    def process(self, data: bytes) -> bytes:
+        return self.fernet.encrypt(data)
+    
+    def unprocess(self, data: bytes) -> bytes:
+        return self.fernet.decrypt(data)
+    
+    @classmethod
+    def new(cls):
+        return cls(cryptography.fernet.Fernet.generate_key())
